@@ -15,12 +15,14 @@ use SilverStripe\GraphQL\Schema\Type\Enum;
 use SilverStripe\GraphQL\Schema\Type\InterfaceType;
 use SilverStripe\GraphQL\Schema\Type\ModelType;
 use SilverStripe\GraphQL\Schema\Type\Scalar;
+use SilverStripe\GraphQL\Schema\Type\Directive;
 use SilverStripe\GraphQL\Schema\Type\Type;
 use SilverStripe\GraphQL\Schema\Type\UnionType;
 use SilverStripe\GraphQL\Tests\Fake\DataObjectFake;
 use SilverStripe\GraphQL\Tests\Fake\FakePage;
 use SilverStripe\GraphQL\Tests\Fake\FakeSiteTree;
 use SilverStripe\GraphQL\Tests\Fake\SubFake\FakePage as SubFakePage;
+use GraphQL\Language\DirectiveLocation;
 
 class SchemaTest extends SapphireTest
 {
@@ -46,7 +48,7 @@ class SchemaTest extends SapphireTest
     {
         $mock = $this->getMockBuilder(Schema::class)
             ->setConstructorArgs(['test', $this->createSchemaContext()])
-            ->setMethods(['addType', 'addInterface', 'addUnion', 'addModel', 'addEnum', 'addScalar'])
+            ->setMethods(['addType', 'addInterface', 'addUnion', 'addModel', 'addEnum', 'addScalar', 'addDirective'])
             ->getMock();
         $mock
             ->expects($this->exactly(3))
@@ -73,6 +75,10 @@ class SchemaTest extends SapphireTest
             ->expects($this->once())
             ->method('addScalar')
             ->with($this->isInstanceOf(Scalar::class));
+        $mock
+            ->expects($this->once())
+            ->method('addDirective')
+            ->with($this->isInstanceOf(Directive::class));
 
         $config = $this->getValidConfig();
         $mock->applyConfig($config);
@@ -362,6 +368,13 @@ class SchemaTest extends SapphireTest
             'mutations' => [
                 'mutation1' => 'testtype3',
             ],
+            'directives' => [
+                'directive1' => [
+                    'locations' => [
+                        DirectiveLocation::FIELD
+                    ]
+                ]
+            ]
         ];
     }
 

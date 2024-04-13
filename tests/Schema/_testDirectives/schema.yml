@@ -1,0 +1,14 @@
+models:
+  SilverStripe\GraphQL\Tests\Fake\DataObjectFake:
+    operations:
+      readOne: true
+directives:
+  testQueryDirective:
+    description: 'test description'
+    args:
+      if:
+        type: Boolean
+        defaultValue: true
+    locations: [QUERY]
+  testFieldDirective:
+    locations: [FIELD]

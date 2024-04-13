@@ -6,6 +6,7 @@ namespace SilverStripe\GraphQL\Schema;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\GraphQL\Schema\Exception\SchemaBuilderException;
 use SilverStripe\GraphQL\Schema\Interfaces\SchemaValidator;
+use SilverStripe\GraphQL\Schema\Type\Directive;
 use SilverStripe\GraphQL\Schema\Type\Enum;
 use SilverStripe\GraphQL\Schema\Type\InterfaceType;
 use SilverStripe\GraphQL\Schema\Type\Scalar;
@@ -50,6 +51,11 @@ class StorableSchema implements SchemaValidator
      */
     private array $scalars;
 
+    /**
+     * @var Directive[]
+     */
+    private array $directives;
+
     private SchemaConfig $config;
 
     public function __construct(array $config = [], ?SchemaConfig $context = null)
@@ -59,6 +65,7 @@ class StorableSchema implements SchemaValidator
         $this->interfaces = $config[Schema::INTERFACES] ?? [];
         $this->unions = $config[Schema::UNIONS] ?? [];
         $this->scalars = $config[Schema::SCALARS] ?? [];
+        $this->directives = $config[Schema::DIRECTIVES] ?? [];
         $this->config = $context ?: SchemaConfig::create();
     }
 
@@ -102,6 +109,14 @@ class StorableSchema implements SchemaValidator
         return $this->scalars;
     }
 
+    /**
+     * @return Directive[]
+     */
+    public function getDirectives(): array
+    {
+        return $this->directives;
+    }
+
     public function getConfig(): SchemaConfig
     {
         return $this->config;
@@ -137,7 +152,8 @@ class StorableSchema implements SchemaValidator
             array_keys($this->enums ?? []),
             array_keys($this->interfaces ?? []),
             array_keys($this->unions ?? []),
-            array_keys($this->scalars ?? [])
+            array_keys($this->scalars ?? []),
+            array_keys($this->directives ?? [])
         );
         $dupes = [];
         foreach (array_count_values($allNames ?? []) as $val => $count) {
@@ -170,7 +186,8 @@ class StorableSchema implements SchemaValidator
             $this->enums,
             $this->interfaces,
             $this->unions,
-            $this->scalars
+            $this->scalars,
+            $this->directives
         );
         /* @var SchemaValidator $validator */
         foreach ($validators as $validator) {

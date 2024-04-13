@@ -1556,6 +1556,26 @@ GRAPHQL;
         $this->assertResult('readOneDataObjectFake.id', $id1, $result);
     }
 
+    public function testDirectives()
+    {
+        $dataObject1 = DataObjectFake::create([]);
+        $dataObject1->write();
+
+        $schema = $this->createSchema(new TestSchemaBuilder(['_' . __FUNCTION__]));
+
+        $query = <<<GRAPHQL
+query @testQueryDirective {
+  readOneDataObjectFake @testFieldDirective {
+    id
+  }
+}
+GRAPHQL;
+        $result = $this->querySchema($schema, $query);
+        // The GraphQL server throws errors for unknown directives.
+        // A simple assertion on the result proves that directive was processed successfully.
+        $this->assertSuccess($result);
+    }
+
     public function testHtaccess(): void
     {
         FakeProductPage::get()->removeAll();

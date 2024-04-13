@@ -3,6 +3,7 @@
 namespace SilverStripe\GraphQL\Schema\Storage;
 
 use Exception;
+use GraphQL\GraphQL;
 use GraphQL\Type\Schema as GraphQLSchema;
 use GraphQL\Type\SchemaConfig as GraphQLSchemaConfig;
 use Psr\Log\LoggerInterface;
@@ -29,6 +30,7 @@ class CodeGenerationStore implements SchemaStorageInterface
     use Configurable;
 
     const TYPE_CLASS_NAME = 'Types';
+    const DIRECTIVE_CLASS_NAME = 'Directives';
 
     /**
      * @config
@@ -137,6 +139,8 @@ class CodeGenerationStore implements SchemaStorageInterface
             'typeClassName' => CodeGenerationStore::TYPE_CLASS_NAME,
             'namespace' => $this->getNamespace(),
             'obfuscator' => $obfuscator,
+            'directiveClassName' => self::DIRECTIVE_CLASS_NAME,
+            'directives' => $schema->getDirectives()
         ];
 
         $config = $schema->getConfig()->toArray();
@@ -146,10 +150,10 @@ class CodeGenerationStore implements SchemaStorageInterface
             $fs->dumpFile(
                 $configFile,
                 '<?php ' .
-                PHP_EOL .
-                'return ' .
-                var_export($config, true) .
-                ';'
+                    PHP_EOL .
+                    'return ' .
+                    var_export($config, true) .
+                    ';'
             );
         } catch (IOException $e) {
             throw new RuntimeException(sprintf(
@@ -164,7 +168,8 @@ class CodeGenerationStore implements SchemaStorageInterface
             $schema->getEnums(),
             $schema->getInterfaces(),
             $schema->getUnions(),
-            $schema->getScalars()
+            $schema->getScalars(),
+            $schema->getDirectives(),
         );
         $encoder = Encoder::create(Path::join($templateDir, 'registry.inc.php'), $allComponents, $globals);
         $code = $encoder->encode();
@@ -185,13 +190,14 @@ class CodeGenerationStore implements SchemaStorageInterface
             'Unions' => 'union.inc.php',
             'Enums' => 'enum.inc.php',
             'Scalars' => 'scalar.inc.php',
+            'Directives' => 'directive.inc.php',
         ];
         $touched = [];
         $built = [];
         $total = 0;
         foreach ($fields as $field => $template) {
             $method = 'get' . $field;
-            /* @var Type|InterfaceType|UnionType|Enum $type */
+            /* @var Type|InterfaceType|UnionType|Enum|Directive $type */
             foreach ($schema->$method() as $type) {
                 $total++;
                 $name = $type->getName();
@@ -310,6 +316,11 @@ class CodeGenerationStore implements SchemaStorageInterface
         }, $typeNames ?? []);
 
         $schemaConfig->setTypes($typeObjs);
+
+        $directivesClass = $this->getClassName(self::DIRECTIVE_CLASS_NAME);
+        $directives = call_user_func([$directivesClass, Schema::DIRECTIVES]);
+        $directives = array_merge(GraphQL::getStandardDirectives(), $directives);
+        $schemaConfig->setDirectives($directives);
 
         $this->graphqlSchema = new GraphQLSchema($schemaConfig);
 

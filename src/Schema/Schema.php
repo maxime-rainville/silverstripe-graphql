@@ -37,6 +37,7 @@ use SilverStripe\GraphQL\Schema\Type\UnionType;
 use SilverStripe\ORM\ArrayLib;
 use Exception;
 use SilverStripe\Core\Injector\Injector;
+use SilverStripe\GraphQL\Schema\Type\Directive;
 use TypeError;
 
 /**
@@ -62,6 +63,7 @@ class Schema implements ConfigurationApplier
     const UNIONS = 'unions';
     const ENUMS = 'enums';
     const SCALARS = 'scalars';
+    const DIRECTIVES = 'directives';
     const QUERY_TYPE = 'Query';
     const MUTATION_TYPE = 'Mutation';
     const ALL = '*';
@@ -108,6 +110,11 @@ class Schema implements ConfigurationApplier
      */
     private array $scalars = [];
 
+    /**
+     * @var Directive[]
+     */
+    private array $directives = [];
+
     private Type $queryType;
 
     private Type $mutationType;
@@ -151,6 +158,7 @@ class Schema implements ConfigurationApplier
             Schema::MODELS,
             Schema::ENUMS,
             Schema::SCALARS,
+            Schema::DIRECTIVES,
             Schema::SCHEMA_CONFIG,
             'execute',
             Schema::SOURCE,
@@ -166,8 +174,8 @@ class Schema implements ConfigurationApplier
         $models = $schemaConfig[Schema::MODELS] ?? [];
         $enums = $schemaConfig[Schema::ENUMS] ?? [];
         $scalars = $schemaConfig[Schema::SCALARS] ?? [];
+        $directives = $schemaConfig[Schema::DIRECTIVES] ?? [];
         $config = $schemaConfig[Schema::SCHEMA_CONFIG] ?? [];
-
 
         $this->getConfig()->apply($config);
 
@@ -247,6 +255,13 @@ class Schema implements ConfigurationApplier
         foreach ($scalars as $scalarName => $scalarConfig) {
             $scalar = Scalar::create($scalarName, $scalarConfig);
             $this->addScalar($scalar);
+        }
+
+        static::assertValidConfig($directives);
+        foreach ($directives as $directiveName => $directiveConfig) {
+            static::assertValidConfig($directiveConfig, ['name', 'description', 'args', 'locations']);
+            $directive = Directive::create($directiveName, $directiveConfig);
+            $this->addDirective($directive);
         }
 
         $this->applyProceduralUpdates($config['execute'] ?? []);
@@ -569,7 +584,8 @@ class Schema implements ConfigurationApplier
                 Schema::ENUMS => $this->getEnums(),
                 Schema::INTERFACES => $this->getInterfaces(),
                 Schema::UNIONS => $this->getUnions(),
-                Schema::SCALARS => $this->getScalars()
+                Schema::SCALARS => $this->getScalars(),
+                Schema::DIRECTIVES => $this->getDirectives()
             ],
             $this->getConfig()
         );
@@ -754,6 +770,22 @@ class Schema implements ConfigurationApplier
     public function removeScalar(string $name): Schema
     {
         unset($this->scalars[$name]);
+        return $this;
+    }
+
+    public function getDirectives(): array
+    {
+        return $this->directives;
+    }
+
+    public function getDirective(string $name): ?Directive
+    {
+        return $this->directives[$name] ?? null;
+    }
+
+    public function addDirective(Directive $directive): self
+    {
+        $this->directives[$directive->getName()] = $directive;
         return $this;
     }
 
