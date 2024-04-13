@@ -219,6 +219,7 @@ class SchemaBuilder
             Schema::INTERFACES => [],
             Schema::UNIONS => [],
             Schema::SCALARS => [],
+            Schema::DIRECTIVES => [],
         ];
 
         $finder = new Finder();

@@ -26,3 +26,27 @@ public static function <?=$component->getName(); ?>() { return static::get('<?=$
     <?php endforeach; ?>
 
 }
+
+class <?=$globals['directiveClassName']; ?> extends AbstractTypeRegistry
+{
+    protected static $types = [];
+
+    protected static function getSourceDirectory(): string
+    {
+        return __DIR__;
+    }
+
+    protected static function getSourceNamespace(): string
+    {
+        return __NAMESPACE__;
+    }
+
+    public static function directives() {
+        return [
+        <?php foreach ($globals['directives'] as $directive) : ?>
+            static::get('<?=$directive->getName(); ?>'),
+        <?php endforeach; ?>
+        ];
+    }
+
+}
